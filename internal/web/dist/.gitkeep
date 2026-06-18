@@ -1,0 +1,3 @@
+# This directory contains the default placeholder UI
+# The index.html file should always be present for builds without Node.js
+# When building with 'make build-full', React build outputs replace this file

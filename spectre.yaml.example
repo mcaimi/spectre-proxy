@@ -1,0 +1,29 @@
+proxy:
+  httpport: 8080
+  httpsport: 8443
+  bindaddr: "0.0.0.0"
+  readtimeout: 30s
+  writetimeout: 30s
+  idletimeout: 120s
+  maxconnections: 1000
+
+webui:
+  enabled: true
+  port: 9000
+  bindaddr: "127.0.0.1"
+
+database:
+  path: "./spectre.db"
+  maxopenconns: 25
+  maxidleconns: 5
+
+tls:
+  certcachesize: 100
+  cakeysize: 4096
+  certkeysize: 2048
+  certvalidity: 8760h  # 365 days
+
+logging:
+  level: "info"
+  format: "text"
+  output: "stdout"

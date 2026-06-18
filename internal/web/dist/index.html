@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPECTRE - HTTP/HTTPS Interception Proxy</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            opacity: 0.95;
+            text-align: center;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        }
+        h2 {
+            margin-bottom: 15px;
+            color: #fff;
+            font-size: 1.8rem;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            padding-bottom: 10px;
+        }
+        h3 {
+            margin: 25px 0 15px 0;
+            color: #ffd700;
+            font-size: 1.3rem;
+        }
+        h4 {
+            margin: 15px 0 10px 0;
+            color: #a5d6ff;
+            font-size: 1.1rem;
+        }
+        p {
+            line-height: 1.8;
+            margin-bottom: 15px;
+            opacity: 0.95;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border-left: 4px solid #ffd700;
+        }
+        code {
+            color: #a5d6ff;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-right: 10px;
+            font-family: monospace;
+        }
+        .method-get { background: #27ae60; color: white; }
+        .method-post { background: #3498db; color: white; }
+        .method-put { background: #f39c12; color: white; }
+        .method-delete { background: #e74c3c; color: white; }
+        .endpoint-block {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #ffd700;
+        }
+        .endpoint-header {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-family: monospace;
+            color: #ffd700;
+        }
+        .param-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .param-table th {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            color: #ffd700;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+        .param-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .param-table tr:last-child td {
+            border-bottom: none;
+        }
+        .param-name {
+            color: #a5d6ff;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .param-type {
+            color: #27ae60;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .param-required {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .param-optional {
+            color: #95a5a6;
+            font-size: 0.85rem;
+        }
+        .status {
+            display: inline-block;
+            padding: 8px 20px;
+            background: #27ae60;
+            border-radius: 25px;
+            margin: 20px auto;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.4);
+            display: block;
+            text-align: center;
+            max-width: 300px;
+        }
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .warning h3 {
+            color: #ffc107;
+            margin-top: 0;
+        }
+        ul {
+            margin-left: 25px;
+            line-height: 2;
+        }
+        ul li {
+            margin: 8px 0;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        .response-code {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin: 5px 5px 5px 0;
+        }
+        .code-200 { background: #27ae60; color: white; }
+        .code-201 { background: #27ae60; color: white; }
+        .code-204 { background: #27ae60; color: white; }
+        .code-400 { background: #e74c3c; color: white; }
+        .code-404 { background: #e67e22; color: white; }
+        .code-500 { background: #c0392b; color: white; }
+        .nav {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .nav a {
+            color: #ffd700;
+            text-decoration: none;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        .nav a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        a {
+            color: #ffd700;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 SPECTRE</h1>
+        <p class="subtitle">Secure Protocol Examination and Capture Tool for Reverse Engineering</p>
+
+        <div class="status" id="status">⏳ Checking API Status...</div>
+
+        <div class="warning">
+            <h3>⚠️ Placeholder UI</h3>
+            <p>You are viewing the <strong>placeholder web interface</strong>. This basic HTML page provides complete API documentation.</p>
+            <p>To build the <strong>full React web interface</strong> with interactive dashboard, virtual host management, and request log viewer:</p>
+            <pre><code>make build-full</code></pre>
+            <p><strong>Requirements:</strong> Node.js 18+ and npm</p>
+        </div>
+
+        <div class="nav">
+            <a href="#health">Health</a>
+            <a href="#vhosts">Virtual Hosts</a>
+            <a href="#certificates">Certificates</a>
+            <a href="#logs">Request Logs</a>
+            <a href="#quickstart">Quick Start</a>
+        </div>
+
+        <div class="card">
+            <h2>Proxy Status</h2>
+            <div class="grid">
+                <div class="stat">
+                    <div class="stat-value">8080</div>
+                    <div class="stat-label">HTTP Port</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">8443</div>
+                    <div class="stat-label">HTTPS Port</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">9000</div>
+                    <div class="stat-label">API Port</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="health">
+            <h2>Health & Status API</h2>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <code>/api/v1/health</code>
+                </div>
+                <p><strong>Description:</strong> Health check endpoint to verify API server is running.</p>
+
+                <h4>Request</h4>
+                <p>No parameters required.</p>
+                <pre><code>curl http://localhost:9000/api/v1/health</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>{
+  "status": "healthy"
+}</code></pre>
+
+                <h4>Example (JavaScript)</h4>
+                <pre><code>fetch('/api/v1/health')
+  .then(res => res.json())
+  .then(data => console.log(data));</code></pre>
+            </div>
+        </div>
+
+        <div class="card" id="vhosts">
+            <h2>Virtual Hosts API</h2>
+            <p>Manage virtual host configurations for intercepting and forwarding HTTP/HTTPS traffic.</p>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <code>/api/v1/vhosts</code>
+                </div>
+                <p><strong>Description:</strong> List all configured virtual hosts.</p>
+
+                <h4>Request</h4>
+                <p>No parameters required.</p>
+                <pre><code>curl http://localhost:9000/api/v1/vhosts</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>[
+  {
+    "id": 1,
+    "hostname": "api.example.com",
+    "target_url": "https://real-backend.example.com",
+    "enabled": true,
+    "created_at": "2026-06-17T10:30:00Z",
+    "updated_at": "2026-06-17T10:30:00Z"
+  },
+  {
+    "id": 2,
+    "hostname": "api.github.com",
+    "target_url": "https://api.github.com",
+    "enabled": true,
+    "created_at": "2026-06-17T11:15:00Z",
+    "updated_at": "2026-06-17T11:15:00Z"
+  }
+]</code></pre>
+
+                <h4>Response Fields</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td>Unique identifier for the virtual host</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">hostname</td>
+                        <td class="param-type">string</td>
+                        <td>The hostname to intercept (e.g., "api.example.com")</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">target_url</td>
+                        <td class="param-type">string</td>
+                        <td>The backend URL to forward requests to</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">enabled</td>
+                        <td class="param-type">boolean</td>
+                        <td>Whether this virtual host is active</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">created_at</td>
+                        <td class="param-type">string</td>
+                        <td>ISO 8601 timestamp of creation</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">updated_at</td>
+                        <td class="param-type">string</td>
+                        <td>ISO 8601 timestamp of last update</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <code>/api/v1/vhosts/{id}</code>
+                </div>
+                <p><strong>Description:</strong> Get details of a specific virtual host.</p>
+
+                <h4>Path Parameters</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-required">Required</td>
+                        <td>Virtual host ID</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl http://localhost:9000/api/v1/vhosts/1</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>{
+  "id": 1,
+  "hostname": "api.example.com",
+  "target_url": "https://real-backend.example.com",
+  "enabled": true,
+  "created_at": "2026-06-17T10:30:00Z",
+  "updated_at": "2026-06-17T10:30:00Z"
+}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-400">400 Bad Request</span> (Invalid ID)</p>
+                <pre><code>{"error": "Invalid ID"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-404">404 Not Found</span> (Virtual host not found)</p>
+                <pre><code>{"error": "Virtual host not found"}</code></pre>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-post">POST</span>
+                    <code>/api/v1/vhosts</code>
+                </div>
+                <p><strong>Description:</strong> Create a new virtual host configuration.</p>
+
+                <h4>Request Body</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">hostname</td>
+                        <td class="param-type">string</td>
+                        <td class="param-required">Required</td>
+                        <td>Hostname to intercept (e.g., "api.example.com")</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">target_url</td>
+                        <td class="param-type">string</td>
+                        <td class="param-required">Required</td>
+                        <td>Backend URL to forward to (e.g., "https://backend.example.com")</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl -X POST http://localhost:9000/api/v1/vhosts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hostname": "api.example.com",
+    "target_url": "https://real-backend.example.com"
+  }'</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-201">201 Created</span></p>
+                <pre><code>{
+  "id": 3,
+  "hostname": "api.example.com",
+  "target_url": "https://real-backend.example.com",
+  "enabled": true,
+  "created_at": "2026-06-17T12:00:00Z",
+  "updated_at": "2026-06-17T12:00:00Z"
+}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-400">400 Bad Request</span> (Missing fields)</p>
+                <pre><code>{"error": "Hostname and target_url are required"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-500">500 Internal Server Error</span></p>
+                <pre><code>{"error": "Failed to create virtual host"}</code></pre>
+
+                <h4>Example (JavaScript)</h4>
+                <pre><code>fetch('/api/v1/vhosts', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    hostname: 'api.example.com',
+    target_url: 'https://real-backend.example.com'
+  })
+})
+  .then(res => res.json())
+  .then(data => console.log('Created:', data));</code></pre>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-put">PUT</span>
+                    <code>/api/v1/vhosts/{id}</code>
+                </div>
+                <p><strong>Description:</strong> Update an existing virtual host configuration.</p>
+
+                <h4>Path Parameters</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-required">Required</td>
+                        <td>Virtual host ID</td>
+                    </tr>
+                </table>
+
+                <h4>Request Body</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">hostname</td>
+                        <td class="param-type">string</td>
+                        <td class="param-optional">Optional</td>
+                        <td>New hostname (if changing)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">target_url</td>
+                        <td class="param-type">string</td>
+                        <td class="param-optional">Optional</td>
+                        <td>New target URL (if changing)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">enabled</td>
+                        <td class="param-type">boolean</td>
+                        <td class="param-optional">Optional</td>
+                        <td>Enable or disable the virtual host</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl -X PUT http://localhost:9000/api/v1/vhosts/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hostname": "api.newexample.com",
+    "target_url": "https://new-backend.example.com",
+    "enabled": false
+  }'</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>{
+  "id": 1,
+  "hostname": "api.newexample.com",
+  "target_url": "https://new-backend.example.com",
+  "enabled": false,
+  "created_at": "2026-06-17T10:30:00Z",
+  "updated_at": "2026-06-17T12:30:00Z"
+}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-404">404 Not Found</span></p>
+                <pre><code>{"error": "Virtual host not found"}</code></pre>
+
+                <h4>Example (JavaScript)</h4>
+                <pre><code>fetch('/api/v1/vhosts/1', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    enabled: false
+  })
+})
+  .then(res => res.json())
+  .then(data => console.log('Updated:', data));</code></pre>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-delete">DELETE</span>
+                    <code>/api/v1/vhosts/{id}</code>
+                </div>
+                <p><strong>Description:</strong> Delete a virtual host configuration.</p>
+
+                <h4>Path Parameters</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-required">Required</td>
+                        <td>Virtual host ID</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl -X DELETE http://localhost:9000/api/v1/vhosts/1</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-204">204 No Content</span></p>
+                <p>No response body. The virtual host has been successfully deleted.</p>
+
+                <p><strong>Error:</strong> <span class="response-code code-404">404 Not Found</span></p>
+                <pre><code>{"error": "Virtual host not found"}</code></pre>
+
+                <h4>Example (JavaScript)</h4>
+                <pre><code>fetch('/api/v1/vhosts/1', {
+  method: 'DELETE'
+})
+  .then(res => {
+    if (res.status === 204) {
+      console.log('Deleted successfully');
+    }
+  });</code></pre>
+            </div>
+        </div>
+
+        <div class="card" id="certificates">
+            <h2>Certificates API</h2>
+            <p>Manage TLS certificates generated by the proxy for HTTPS interception.</p>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <code>/api/v1/certificates</code>
+                </div>
+                <p><strong>Description:</strong> List all generated TLS certificates.</p>
+
+                <h4>Request</h4>
+                <pre><code>curl http://localhost:9000/api/v1/certificates</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>[
+  {
+    "id": 1,
+    "hostname": "api.example.com",
+    "created_at": "2026-06-17 10:30:00",
+    "expires_at": "2027-06-17 10:30:00"
+  },
+  {
+    "id": 2,
+    "hostname": "api.github.com",
+    "created_at": "2026-06-17 11:15:00",
+    "expires_at": "2027-06-17 11:15:00"
+  }
+]</code></pre>
+
+                <h4>Response Fields</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td>Unique identifier for the certificate</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">hostname</td>
+                        <td class="param-type">string</td>
+                        <td>The hostname this certificate is for</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">created_at</td>
+                        <td class="param-type">string</td>
+                        <td>Creation timestamp (YYYY-MM-DD HH:MM:SS)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">expires_at</td>
+                        <td class="param-type">string</td>
+                        <td>Expiration timestamp (typically 1 year after creation)</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <code>/api/v1/certificates/ca</code>
+                </div>
+                <p><strong>Description:</strong> Download the root CA certificate for installation on client systems.</p>
+
+                <h4>Request</h4>
+                <pre><code>curl http://localhost:9000/api/v1/certificates/ca -o spectre-ca.crt</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <p><strong>Content-Type:</strong> application/x-pem-file</p>
+                <p><strong>Content-Disposition:</strong> attachment; filename=spectre-ca.crt</p>
+                <pre><code>-----BEGIN CERTIFICATE-----
+MIIDXTCCAkWgAwIBAgIUK...
+(PEM-encoded certificate data)
+...
+-----END CERTIFICATE-----</code></pre>
+
+                <h4>Usage</h4>
+                <p>After downloading, install the CA certificate on your system:</p>
+                <p><strong>macOS:</strong></p>
+                <pre><code>sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain spectre-ca.crt</code></pre>
+                <p><strong>Linux:</strong></p>
+                <pre><code>sudo cp spectre-ca.crt /usr/local/share/ca-certificates/
+sudo update-ca-certificates</code></pre>
+                <p><strong>Windows:</strong></p>
+                <pre><code>certutil -addstore -f "ROOT" spectre-ca.crt</code></pre>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-post">POST</span>
+                    <code>/api/v1/certificates/ca/replace</code>
+                </div>
+                <p><strong>Description:</strong> Replace the root CA certificate with a custom one. All existing virtual host certificates will be invalidated and regenerated on-demand.</p>
+
+                <h4>Request Body</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">common_name</td>
+                        <td class="param-type">string</td>
+                        <td class="param-required">Required</td>
+                        <td>-</td>
+                        <td>Common Name (CN) for the CA certificate</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">organization</td>
+                        <td class="param-type">string</td>
+                        <td class="param-optional">Optional</td>
+                        <td>""</td>
+                        <td>Organization (O)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">organizational_unit</td>
+                        <td class="param-type">string</td>
+                        <td class="param-optional">Optional</td>
+                        <td>""</td>
+                        <td>Organizational Unit (OU)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">country</td>
+                        <td class="param-type">string</td>
+                        <td class="param-optional">Optional</td>
+                        <td>""</td>
+                        <td>Country (C)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">province</td>
+                        <td class="param-type">string</td>
+                        <td class="param-optional">Optional</td>
+                        <td>""</td>
+                        <td>State/Province (ST)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">locality</td>
+                        <td class="param-type">string</td>
+                        <td class="param-optional">Optional</td>
+                        <td>""</td>
+                        <td>Locality/City (L)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">validity_years</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-optional">Optional</td>
+                        <td>10</td>
+                        <td>Certificate validity in years</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl -X POST http://localhost:9000/api/v1/certificates/ca/replace \
+  -H "Content-Type: application/json" \
+  -d '{
+    "common_name": "My Company Root CA",
+    "organization": "My Company Inc",
+    "organizational_unit": "IT Security",
+    "country": "US",
+    "province": "New York",
+    "locality": "New York City",
+    "validity_years": 5
+  }'</code></pre>
+
+                <h4>Minimal Request</h4>
+                <p>Only the common_name is required:</p>
+                <pre><code>curl -X POST http://localhost:9000/api/v1/certificates/ca/replace \
+  -H "Content-Type: application/json" \
+  -d '{"common_name": "Custom CA"}'</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>{"message": "CA certificate replaced successfully"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-400">400 Bad Request</span> (Missing common_name)</p>
+                <pre><code>{"error": "common_name is required"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-500">500 Internal Server Error</span></p>
+                <pre><code>{"error": "Failed to replace CA certificate"}</code></pre>
+
+                <h4>What Happens</h4>
+                <ul>
+                    <li>✅ New CA certificate is created with your custom fields</li>
+                    <li>🔄 Old CA is deactivated (preserved in database for audit)</li>
+                    <li>🗑️ All existing virtual host certificates are invalidated</li>
+                    <li>⚡ Certificate cache is cleared</li>
+                    <li>🔁 New certificates are automatically generated on-demand</li>
+                </ul>
+
+                <h4>Post-Replacement Steps</h4>
+                <ol>
+                    <li>Download the new CA certificate: <code>GET /api/v1/certificates/ca</code></li>
+                    <li>Install the new CA in your system/browser trust store</li>
+                    <li>All subsequent HTTPS connections will use the new CA</li>
+                </ol>
+
+                <h4>Example (JavaScript)</h4>
+                <pre><code>fetch('/api/v1/certificates/ca/replace', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    common_name: 'My Custom CA',
+    organization: 'My Organization',
+    validity_years: 10
+  })
+})
+  .then(res => res.json())
+  .then(data => console.log(data.message));</code></pre>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-delete">DELETE</span>
+                    <code>/api/v1/certificates/{id}</code>
+                </div>
+                <p><strong>Description:</strong> Delete a specific certificate from the database.</p>
+
+                <h4>Path Parameters</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-required">Required</td>
+                        <td>Certificate ID</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl -X DELETE http://localhost:9000/api/v1/certificates/1</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-204">204 No Content</span></p>
+                <p>No response body. The certificate has been successfully deleted.</p>
+
+                <p><strong>Error:</strong> <span class="response-code code-400">400 Bad Request</span> (Invalid ID)</p>
+                <pre><code>{"error": "Invalid ID"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-500">500 Internal Server Error</span></p>
+                <pre><code>{"error": "Failed to delete certificate"}</code></pre>
+            </div>
+        </div>
+
+        <div class="card" id="logs">
+            <h2>Request Logs API</h2>
+            <p>Access captured HTTP/HTTPS request and response data.</p>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <code>/api/v1/logs</code>
+                </div>
+                <p><strong>Description:</strong> List captured request logs with pagination.</p>
+
+                <h4>Query Parameters</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Default</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">limit</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-optional">Optional</td>
+                        <td>100</td>
+                        <td>Number of logs to return (max per page)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">offset</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-optional">Optional</td>
+                        <td>0</td>
+                        <td>Number of logs to skip (for pagination)</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl "http://localhost:9000/api/v1/logs?limit=50&offset=0"</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>{
+  "logs": [
+    {
+      "id": 123,
+      "vhost_id": 1,
+      "vhost_hostname": "api.example.com",
+      "method": "GET",
+      "path": "/users/123",
+      "query": "?format=json",
+      "status_code": 200,
+      "request_headers": "{\"User-Agent\":\"curl/7.81.0\",\"Accept\":\"*/*\"}",
+      "response_headers": "{\"Content-Type\":\"application/json\"}",
+      "request_body": "",
+      "response_body": "{\"id\":123,\"name\":\"John Doe\"}",
+      "timestamp": "2026-06-17T12:45:30Z",
+      "duration_ms": 245
+    },
+    {
+      "id": 122,
+      "vhost_id": 2,
+      "vhost_hostname": "api.github.com",
+      "method": "POST",
+      "path": "/repos/owner/repo/issues",
+      "query": "",
+      "status_code": 201,
+      "request_headers": "{\"Authorization\":\"token ghp_xxx\"}",
+      "response_headers": "{\"Content-Type\":\"application/json\"}",
+      "request_body": "{\"title\":\"Bug report\"}",
+      "response_body": "{\"id\":456,\"number\":1}",
+      "timestamp": "2026-06-17T12:40:15Z",
+      "duration_ms": 532
+    }
+  ],
+  "total": 245,
+  "limit": 50,
+  "offset": 0
+}</code></pre>
+
+                <h4>Response Fields</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">logs</td>
+                        <td class="param-type">array</td>
+                        <td>Array of request log objects</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">total</td>
+                        <td class="param-type">integer</td>
+                        <td>Total number of logs in database</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">limit</td>
+                        <td class="param-type">integer</td>
+                        <td>Limit used for this query</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">offset</td>
+                        <td class="param-type">integer</td>
+                        <td>Offset used for this query</td>
+                    </tr>
+                </table>
+
+                <h4>Log Object Fields</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td>Unique identifier for the log entry</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">vhost_id</td>
+                        <td class="param-type">integer</td>
+                        <td>ID of the virtual host that handled this request</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">vhost_hostname</td>
+                        <td class="param-type">string</td>
+                        <td>Hostname of the virtual host</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">method</td>
+                        <td class="param-type">string</td>
+                        <td>HTTP method (GET, POST, PUT, DELETE, etc.)</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">path</td>
+                        <td class="param-type">string</td>
+                        <td>Request path (e.g., "/users/123")</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">query</td>
+                        <td class="param-type">string</td>
+                        <td>Query string (e.g., "?format=json")</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">status_code</td>
+                        <td class="param-type">integer</td>
+                        <td>HTTP response status code</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">request_headers</td>
+                        <td class="param-type">string</td>
+                        <td>JSON-encoded request headers</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">response_headers</td>
+                        <td class="param-type">string</td>
+                        <td>JSON-encoded response headers</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">request_body</td>
+                        <td class="param-type">string</td>
+                        <td>Request body content</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">response_body</td>
+                        <td class="param-type">string</td>
+                        <td>Response body content</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">timestamp</td>
+                        <td class="param-type">string</td>
+                        <td>ISO 8601 timestamp when request was captured</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">duration_ms</td>
+                        <td class="param-type">integer</td>
+                        <td>Request duration in milliseconds</td>
+                    </tr>
+                </table>
+
+                <h4>Pagination Example</h4>
+                <pre><code># Get first 50 logs
+curl "http://localhost:9000/api/v1/logs?limit=50&offset=0"
+
+# Get next 50 logs
+curl "http://localhost:9000/api/v1/logs?limit=50&offset=50"
+
+# Get third page
+curl "http://localhost:9000/api/v1/logs?limit=50&offset=100"</code></pre>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <code>/api/v1/logs/{id}</code>
+                </div>
+                <p><strong>Description:</strong> Get detailed information for a specific request log.</p>
+
+                <h4>Path Parameters</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-required">Required</td>
+                        <td>Request log ID</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl http://localhost:9000/api/v1/logs/123</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>{
+  "id": 123,
+  "vhost_id": 1,
+  "vhost_hostname": "api.example.com",
+  "method": "GET",
+  "path": "/users/123",
+  "query": "?format=json",
+  "status_code": 200,
+  "request_headers": "{\"User-Agent\":\"curl/7.81.0\",\"Accept\":\"*/*\",\"Host\":\"api.example.com\"}",
+  "response_headers": "{\"Content-Type\":\"application/json\",\"Content-Length\":\"42\"}",
+  "request_body": "",
+  "response_body": "{\"id\":123,\"name\":\"John Doe\",\"email\":\"john@example.com\"}",
+  "timestamp": "2026-06-17T12:45:30Z",
+  "duration_ms": 245
+}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-400">400 Bad Request</span> (Invalid ID)</p>
+                <pre><code>{"error": "Invalid ID"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-404">404 Not Found</span> (Log not found)</p>
+                <pre><code>{"error": "Request log not found"}</code></pre>
+
+                <h4>Example (JavaScript)</h4>
+                <pre><code>fetch('/api/v1/logs/123')
+  .then(res => res.json())
+  .then(log => {
+    console.log(`${log.method} ${log.path}`);
+    console.log('Request:', JSON.parse(log.request_headers));
+    console.log('Response:', log.response_body);
+  });</code></pre>
+            </div>
+        </div>
+
+        <div class="card" id="quickstart">
+            <h2>Quick Start Guide</h2>
+
+            <h3>Step 1: Download Root CA Certificate</h3>
+            <pre><code>curl http://localhost:9000/api/v1/certificates/ca -o spectre-ca.crt</code></pre>
+
+            <h3>Step 2: Install Root CA</h3>
+            <p><strong>macOS:</strong></p>
+            <pre><code>sudo security add-trusted-cert -d -r trustRoot \
+  -k /Library/Keychains/System.keychain spectre-ca.crt</code></pre>
+
+            <p><strong>Linux:</strong></p>
+            <pre><code>sudo cp spectre-ca.crt /usr/local/share/ca-certificates/
+sudo update-ca-certificates</code></pre>
+
+            <p><strong>Windows:</strong></p>
+            <pre><code>certutil -addstore -f "ROOT" spectre-ca.crt</code></pre>
+
+            <h3>Step 3: Add a Virtual Host</h3>
+            <pre><code>curl -X POST http://localhost:9000/api/v1/vhosts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "hostname": "api.example.com",
+    "target_url": "https://real-backend.example.com"
+  }'</code></pre>
+
+            <h3>Step 4: Route Traffic to Proxy</h3>
+            <pre><code>echo "127.0.0.1 api.example.com" | sudo tee -a /etc/hosts</code></pre>
+
+            <h3>Step 5: Test Interception</h3>
+            <p>HTTP:</p>
+            <pre><code>curl http://api.example.com:8080/endpoint</code></pre>
+
+            <p>HTTPS:</p>
+            <pre><code>curl https://api.example.com:8443/endpoint</code></pre>
+
+            <h3>Step 6: View Captured Traffic</h3>
+            <pre><code>curl http://localhost:9000/api/v1/logs | jq</code></pre>
+        </div>
+
+        <div class="card">
+            <h2>Full React UI</h2>
+            <p>Build the complete React-based web interface:</p>
+            <pre><code>make build-full</code></pre>
+            <p>Features:</p>
+            <ul>
+                <li>📊 Interactive Dashboard with real-time statistics</li>
+                <li>🌐 Visual Virtual Host Manager (CRUD operations)</li>
+                <li>🔒 Certificate Manager with one-click CA download</li>
+                <li>📝 Request Log Viewer with detail modal and search</li>
+                <li>🔄 Auto-refresh capabilities</li>
+                <li>🎨 Modern, responsive design</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 40px; text-align: center; opacity: 0.8; font-size: 0.9rem; padding: 20px;">
+            <p><strong>SPECTRE Proxy</strong></p>
+            <p>HTTP/HTTPS Interception Proxy for Reverse Engineers</p>
+            <p style="margin-top: 20px; opacity: 0.7;">
+                HTTP: 0.0.0.0:8080 • HTTPS: 0.0.0.0:8443 • API: 127.0.0.1:9000
+            </p>
+        </div>
+    </div>
+
+    <script>
+        fetch('/api/v1/health')
+            .then(res => res.json())
+            .then(data => {
+                const statusEl = document.getElementById('status');
+                if (data.status === 'healthy') {
+                    statusEl.textContent = '✅ SPECTRE Proxy is Running';
+                    statusEl.style.background = '#27ae60';
+                } else {
+                    statusEl.textContent = '⚠️ API Status Unknown';
+                    statusEl.style.background = '#f39c12';
+                }
+            })
+            .catch(err => {
+                const statusEl = document.getElementById('status');
+                statusEl.textContent = '❌ API Not Responding';
+                statusEl.style.background = '#e74c3c';
+            });
+
+        console.log('%c🔍 SPECTRE Proxy API', 'font-size: 24px; font-weight: bold; color: #667eea;');
+        console.log('\n%cTry these commands in your console:', 'font-size: 14px; font-weight: bold;');
+        console.log('  fetch("/api/v1/health").then(r => r.json()).then(console.log)');
+        console.log('  fetch("/api/v1/vhosts").then(r => r.json()).then(console.log)');
+        console.log('  fetch("/api/v1/certificates").then(r => r.json()).then(console.log)');
+        console.log('  fetch("/api/v1/logs?limit=10").then(r => r.json()).then(console.log)');
+        console.log('\n%cReplace CA with custom certificate:', 'font-size: 12px; font-weight: bold; color: #ffd700;');
+        console.log('  fetch("/api/v1/certificates/ca/replace", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({common_name: "My Custom CA", organization: "My Org"})}).then(r => r.json()).then(console.log)');
+    </script>
+</body>
+</html>
