@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/mcaimi/spectre/internal/api/handlers"
-	"github.com/mcaimi/spectre/internal/cert"
-	"github.com/mcaimi/spectre/internal/storage"
-	"github.com/mcaimi/spectre/internal/vhost"
+	"codeberg.org/mcaimi/spectre-proxy/internal/api/handlers"
+	"codeberg.org/mcaimi/spectre-proxy/internal/cert"
+	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
+	"codeberg.org/mcaimi/spectre-proxy/internal/vhost"
 	"github.com/sirupsen/logrus"
 )
 

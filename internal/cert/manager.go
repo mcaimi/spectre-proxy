@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mcaimi/spectre/internal/storage"
+	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 

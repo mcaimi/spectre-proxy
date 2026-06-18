@@ -17,10 +17,10 @@ build-ui:
 	cp -r web/ui/dist/* internal/web/dist/
 
 build: install-deps
-	$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BINARY_NAME) cmd/spectre/main.go
+	$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BINARY_NAME) cmd/spectre-proxy/main.go
 
 build-full: install-deps build-ui
-	$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BINARY_NAME) cmd/spectre/main.go
+	$(GO) build $(GOFLAGS) $(LDFLAGS) -o $(BINARY_NAME) cmd/spectre-proxy/main.go
 
 clean:
 	rm -f $(BINARY_NAME)

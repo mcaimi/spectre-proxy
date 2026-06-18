@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mcaimi/spectre/internal/storage"
+	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
 )
 
 type WildcardHost struct {

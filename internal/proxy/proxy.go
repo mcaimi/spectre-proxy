@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mcaimi/spectre/internal/cert"
-	"github.com/mcaimi/spectre/internal/storage"
-	"github.com/mcaimi/spectre/internal/vhost"
+	"codeberg.org/mcaimi/spectre-proxy/internal/cert"
+	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
+	"codeberg.org/mcaimi/spectre-proxy/internal/vhost"
 	"github.com/sirupsen/logrus"
 )
 
