@@ -26,7 +26,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
   -ldflags="-s -w -extldflags '-static'" \
   -tags 'osusergo netgo static_build' \
   -o spectre \
-  cmd/spectre/main.go
+  cmd/spectre-proxy/main.go
 
 # ============================================================================
 # Stage 2: Minimal runtime image
