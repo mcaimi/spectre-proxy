@@ -1,0 +1,108 @@
+# SPECTRE HTTP/HTTPS Interception Proxy
+# Multi-stage build for minimal final image
+
+# Build argument to control UI build
+ARG BUILD_UI=true
+
+# ============================================================================
+# Stage 1: Build React UI (optional)
+# ============================================================================
+FROM node:24-alpine AS ui-builder
+
+WORKDIR /build/web/ui
+
+# Copy UI package files
+COPY web/ui/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy UI source
+COPY web/ui/ ./
+
+# Build UI
+RUN npm run build
+
+# ============================================================================
+# Stage 2: Build Go binary
+# ============================================================================
+FROM golang:1.26-alpine AS go-builder
+
+# Install build dependencies
+RUN apk add --no-cache git make gcc musl-dev
+
+WORKDIR /build
+
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Copy UI build from previous stage (if built)
+ARG BUILD_UI
+RUN if [ "$BUILD_UI" = "true" ]; then \
+  rm -rf internal/web/dist/* && \
+  mkdir -p internal/web/dist; \
+  fi
+
+COPY --from=ui-builder /build/web/ui/dist/ internal/web/dist/
+
+# Build the binary
+RUN CGO_ENABLED=1 GOOS=linux go build \
+  -ldflags="-s -w" \
+  -o spectre \
+  cmd/spectre/main.go
+
+# ============================================================================
+# Stage 3: Minimal runtime image
+# ============================================================================
+FROM alpine:3.19
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+  ca-certificates \
+  sqlite \
+  tzdata
+
+# Create non-root user
+RUN addgroup -g 1000 spectre && \
+  adduser -D -u 1000 -G spectre spectre
+
+# Create directories for data
+RUN mkdir -p /data /config && \
+  chown -R spectre:spectre /data /config
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=go-builder /build/spectre /app/spectre
+
+# Copy default config
+COPY --from=go-builder /build/spectre.yaml /config/spectre.yaml
+
+# Set ownership
+RUN chown -R spectre:spectre /app
+
+# Switch to non-root user
+USER spectre
+
+# Expose ports
+EXPOSE 8080/tcp
+EXPOSE 8443/tcp
+EXPOSE 9000/tcp
+
+# Volume for persistent data
+VOLUME ["/data", "/config"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:9000/api/v1/health || exit 1
+
+# Environment variables
+ENV SPECTRE_DATABASE_PATH=/data/spectre.db
+ENV SPECTRE_WEBUI_BINDADDR=0.0.0.0
+
+# Default command
+CMD ["/app/spectre", "--config", "/config/spectre.yaml"]
