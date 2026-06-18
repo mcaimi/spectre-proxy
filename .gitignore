@@ -1,0 +1,55 @@
+# Binaries
+spectre
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+*.out
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Configuration
+spectre.yaml
+*.local.yaml
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node/React
+web/ui/node_modules/
+web/ui/dist/
+web/ui/.vite/
+web/ui/package-lock.json
+
+# Embedded static files (copied from web/ui/dist during build-full)
+# BUT keep the default placeholder index.html
+internal/web/dist/*
+!internal/web/dist/index.html
+!internal/web/dist/.gitkeep
+
+# Certificates
+*.pem
+*.crt
+*.key
+!test/fixtures/*.pem
