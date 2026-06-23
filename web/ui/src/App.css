@@ -13,6 +13,14 @@
 
 .navbar-brand {
   margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-brand-text {
+  display: flex;
+  flex-direction: column;
 }
 
 .navbar-brand h1 {

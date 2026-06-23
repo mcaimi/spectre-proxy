@@ -12,8 +12,11 @@ function App() {
       <div className="app">
         <nav className="navbar">
           <div className="navbar-brand">
-            <h1>🔍 SPECTRE</h1>
-            <span className="navbar-subtitle">HTTP/HTTPS Interception Proxy</span>
+            <div className="navbar-brand-text">
+                <h1>SPECTRE Proxy</h1>
+                <span className="navbar-subtitle">HTTP/HTTPS Interception Proxy</span>
+            </div>
+            <img src="/spectre.png" width="128" height="128" alt="SPECTRE" />
           </div>
           <div className="navbar-menu">
             <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
