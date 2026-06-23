@@ -27,18 +27,27 @@ function Dashboard() {
       ])
 
       const vhosts = vhostsRes.data
-      setStats({
-        totalVHosts: vhosts.length,
-        enabledVHosts: vhosts.filter(v => v.enabled).length,
-        totalCerts: certsRes.data.length,
-        totalLogs: logsRes.data.total || 0,
-      })
+      if (vhosts) {
+        setStats({
+          totalVHosts: vhosts.length,
+          enabledVHosts: vhosts.filter(v => v.enabled).length,
+          totalCerts: certsRes.data.length,
+          totalLogs: logsRes.data.total || 0,
+        })
+      } else {
+        setStats({ 
+          totalVHosts: 0,
+          enabledVHosts: 0,
+          totalCerts: 0,
+          totalLogs: 0,
+        })
+      }
 
       setRecentLogs(logsRes.data.logs || [])
       setLoading(false)
       setError(null)
     } catch (err) {
-      setError(err.message)
+      setError("loadDashboardData: " + err.message)
       setLoading(false)
     }
   }
