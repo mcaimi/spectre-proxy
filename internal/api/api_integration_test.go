@@ -73,6 +73,7 @@ func setupTestServer(t *testing.T) (*chi.Mux, *storage.Database, func()) {
 			r.Delete("/{id}", certHandler.Delete)
 			r.Get("/ca", certHandler.DownloadCA)
 			r.Post("/ca/replace", certHandler.ReplaceCA)
+			r.Post("/ca/load", certHandler.LoadCA)
 		})
 
 		r.Route("/logs", func(r chi.Router) {
