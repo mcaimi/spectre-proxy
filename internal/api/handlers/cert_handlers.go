@@ -131,3 +131,38 @@ func (h *CertHandler) ReplaceCA(w http.ResponseWriter, r *http.Request) {
 	h.log.Info("CA certificate replaced successfully via API")
 	respondJSON(w, http.StatusOK, map[string]string{"message": "CA certificate replaced successfully"})
 }
+
+func (h *CertHandler) LoadCA(w http.ResponseWriter, r *http.Request) {
+	type loadCARequest struct {
+		Certificate string `json:"certificate"`
+		PrivateKey  string `json:"private_key"`
+	}
+
+	var req loadCARequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if req.Certificate == "" {
+		respondError(w, http.StatusBadRequest, "certificate is required")
+		return
+	}
+
+	if req.PrivateKey == "" {
+		respondError(w, http.StatusBadRequest, "private_key is required")
+		return
+	}
+
+	certPEM := []byte(req.Certificate)
+	keyPEM := []byte(req.PrivateKey)
+
+	if err := h.certManager.LoadCustomCA(certPEM, keyPEM, h.certKeySize, h.certValidity); err != nil {
+		h.log.Errorf("Failed to load custom CA: %v", err)
+		respondError(w, http.StatusInternalServerError, "Failed to load CA certificate")
+		return
+	}
+
+	h.log.Info("Custom CA certificate loaded successfully via API")
+	respondJSON(w, http.StatusOK, map[string]string{"message": "Custom CA certificate loaded successfully"})
+}

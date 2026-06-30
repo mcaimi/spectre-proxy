@@ -26,6 +26,7 @@ export const certAPI = {
     window.location.href = '/api/v1/certificates/ca'
   },
   replaceCA: (data) => api.post('/certificates/ca/replace', data),
+  loadCA: (data) => api.post('/certificates/ca/load', data),
 }
 
 export const logAPI = {

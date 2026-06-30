@@ -92,6 +92,7 @@ func (s *Server) Start(cfg *Config) error {
 			r.Delete("/{id}", certHandler.Delete)
 			r.Get("/ca", certHandler.DownloadCA)
 			r.Post("/ca/replace", certHandler.ReplaceCA)
+			r.Post("/ca/load", certHandler.LoadCA)
 		})
 
 		r.Route("/logs", func(r chi.Router) {

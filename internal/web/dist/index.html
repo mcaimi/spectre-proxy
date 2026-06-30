@@ -851,6 +851,89 @@ sudo update-ca-certificates</code></pre>
 
             <div class="endpoint-block">
                 <div class="endpoint-header">
+                    <span class="method method-post">POST</span>
+                    <code>/api/v1/certificates/ca/load</code>
+                </div>
+                <p><strong>Description:</strong> Load a pre-generated CA certificate and private key. All existing virtual host certificates will be invalidated and regenerated on-demand.</p>
+
+                <h4>Request Body</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">certificate</td>
+                        <td class="param-type">string</td>
+                        <td class="param-required">Required</td>
+                        <td>PEM-encoded CA certificate</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">private_key</td>
+                        <td class="param-type">string</td>
+                        <td class="param-required">Required</td>
+                        <td>PEM-encoded CA private key</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl -X POST http://localhost:9000/api/v1/certificates/ca/load \
+  -H "Content-Type: application/json" \
+  -d '{
+    "certificate": "-----BEGIN CERTIFICATE-----\nMIID...\n-----END CERTIFICATE-----",
+    "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIE...\n-----END RSA PRIVATE KEY-----"
+  }'</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <pre><code>{"message": "Custom CA certificate loaded successfully"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-400">400 Bad Request</span> (Missing certificate)</p>
+                <pre><code>{"error": "certificate is required"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-400">400 Bad Request</span> (Missing private_key)</p>
+                <pre><code>{"error": "private_key is required"}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-500">500 Internal Server Error</span></p>
+                <pre><code>{"error": "Failed to load CA certificate"}</code></pre>
+
+                <h4>What Happens</h4>
+                <ul>
+                    <li>✅ Custom CA certificate is loaded from provided PEM data</li>
+                    <li>🔄 Old CA is deactivated (preserved in database for audit)</li>
+                    <li>🗑️ All existing virtual host certificates are invalidated</li>
+                    <li>⚡ Certificate cache is cleared</li>
+                    <li>🔁 New certificates are automatically generated on-demand</li>
+                </ul>
+
+                <h4>Post-Load Steps</h4>
+                <ol>
+                    <li>Download the loaded CA certificate: <code>GET /api/v1/certificates/ca</code></li>
+                    <li>Install the CA in your system/browser trust store</li>
+                    <li>All subsequent HTTPS connections will use the loaded CA</li>
+                </ol>
+
+                <h4>Example with File Upload (JavaScript)</h4>
+                <pre><code>// Read certificate and key files
+const certFile = document.getElementById('certFile').files[0];
+const keyFile = document.getElementById('keyFile').files[0];
+
+const certificate = await certFile.text();
+const private_key = await keyFile.text();
+
+fetch('/api/v1/certificates/ca/load', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ certificate, private_key })
+})
+  .then(res => res.json())
+  .then(data => console.log(data.message));</code></pre>
+            </div>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
                     <span class="method method-delete">DELETE</span>
                     <code>/api/v1/certificates/{id}</code>
                 </div>
@@ -1232,6 +1315,8 @@ sudo update-ca-certificates</code></pre>
         console.log('  fetch("/api/v1/logs?limit=10").then(r => r.json()).then(console.log)');
         console.log('\n%cReplace CA with custom certificate:', 'font-size: 12px; font-weight: bold; color: #ffd700;');
         console.log('  fetch("/api/v1/certificates/ca/replace", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({common_name: "My Custom CA", organization: "My Org"})}).then(r => r.json()).then(console.log)');
+        console.log('\n%cLoad pre-generated CA certificate:', 'font-size: 12px; font-weight: bold; color: #ffd700;');
+        console.log('  fetch("/api/v1/certificates/ca/load", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({certificate: "-----BEGIN CERTIFICATE-----\\n...\\n-----END CERTIFICATE-----", private_key: "-----BEGIN RSA PRIVATE KEY-----\\n...\\n-----END RSA PRIVATE KEY-----"})}).then(r => r.json()).then(console.log)');
     </script>
 </body>
 </html>

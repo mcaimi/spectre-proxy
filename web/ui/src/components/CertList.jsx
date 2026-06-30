@@ -16,6 +16,12 @@ function CertList() {
     validity_years: 10
   })
   const [caReplacing, setCAReplacing] = useState(false)
+  const [showLoadCAForm, setShowLoadCAForm] = useState(false)
+  const [loadCAForm, setLoadCAForm] = useState({
+    certificate: '',
+    private_key: ''
+  })
+  const [caLoading, setCALoading] = useState(false)
 
   useEffect(() => {
     loadCerts()
@@ -87,6 +93,47 @@ function CertList() {
     setCAForm(prev => ({ ...prev, [field]: value }))
   }
 
+  const handleLoadCAFileChange = async (field, file) => {
+    if (!file) return
+
+    const text = await file.text()
+    setLoadCAForm(prev => ({ ...prev, [field]: text }))
+  }
+
+  const handleLoadCA = async (e) => {
+    e.preventDefault()
+
+    if (!loadCAForm.certificate.trim()) {
+      alert('CA Certificate is required')
+      return
+    }
+
+    if (!loadCAForm.private_key.trim()) {
+      alert('CA Private Key is required')
+      return
+    }
+
+    if (!confirm('Are you sure you want to load this custom Root CA? This will invalidate all existing certificates and they will be regenerated on-demand.')) {
+      return
+    }
+
+    setCALoading(true)
+    try {
+      await certAPI.loadCA(loadCAForm)
+      alert('Custom CA certificate loaded successfully! Download the CA and install it in your trust store.')
+      setShowLoadCAForm(false)
+      setLoadCAForm({
+        certificate: '',
+        private_key: ''
+      })
+      loadCerts()
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.error || err.message}`)
+    } finally {
+      setCALoading(false)
+    }
+  }
+
   if (loading) {
     return <div className="loading">Loading certificates...</div>
   }
@@ -102,15 +149,94 @@ function CertList() {
             </button>
             <button
               className="btn-primary"
-              onClick={() => setShowCAForm(!showCAForm)}
+              onClick={() => {
+                setShowCAForm(!showCAForm)
+                setShowLoadCAForm(false)
+              }}
               style={{ backgroundColor: '#3498db' }}
             >
               {showCAForm ? '✖ Cancel' : '🔄 Replace Root CA'}
+            </button>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setShowLoadCAForm(!showLoadCAForm)
+                setShowCAForm(false)
+              }}
+              style={{ backgroundColor: '#9b59b6' }}
+            >
+              {showLoadCAForm ? '✖ Cancel' : '📁 Load Custom CA'}
             </button>
           </div>
         </div>
 
         {error && <div className="error">Error: {error}</div>}
+
+        {showLoadCAForm && (
+          <div style={{ padding: '20px', backgroundColor: '#f8f9fa', border: '2px solid #9b59b6', borderRadius: '8px', marginBottom: '20px' }}>
+            <h3 style={{ marginTop: 0, color: '#2c3e50' }}>Load Custom Root CA Certificate</h3>
+            <p style={{ color: '#7f8c8d', marginBottom: '20px' }}>
+              Load a pre-generated Root CA certificate and private key. All existing virtual host certificates will be invalidated and regenerated on-demand.
+            </p>
+
+            <form onSubmit={handleLoadCA}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#2c3e50' }}>
+                    CA Certificate (PEM) *
+                  </label>
+                  <input
+                    type="file"
+                    accept=".crt,.pem,.cer"
+                    onChange={(e) => handleLoadCAFileChange('certificate', e.target.files[0])}
+                    style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+                  />
+                  {loadCAForm.certificate && (
+                    <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#e8f5e9', border: '1px solid #4caf50', borderRadius: '5px', fontSize: '12px' }}>
+                      ✓ Certificate loaded ({loadCAForm.certificate.length} bytes)
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#2c3e50' }}>
+                    CA Private Key (PEM) *
+                  </label>
+                  <input
+                    type="file"
+                    accept=".key,.pem"
+                    onChange={(e) => handleLoadCAFileChange('private_key', e.target.files[0])}
+                    style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
+                  />
+                  {loadCAForm.private_key && (
+                    <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#e8f5e9', border: '1px solid #4caf50', borderRadius: '5px', fontSize: '12px' }}>
+                      ✓ Private key loaded ({loadCAForm.private_key.length} bytes)
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                <button
+                  type="submit"
+                  className="btn-success"
+                  disabled={caLoading || !loadCAForm.certificate || !loadCAForm.private_key}
+                  style={{ padding: '12px 24px' }}
+                >
+                  {caLoading ? '⏳ Loading CA...' : '✅ Load Custom CA'}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowLoadCAForm(false)}
+                  style={{ padding: '12px 24px', backgroundColor: '#95a5a6' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {showCAForm && (
           <div style={{ padding: '20px', backgroundColor: '#f8f9fa', border: '2px solid #3498db', borderRadius: '8px', marginBottom: '20px' }}>
