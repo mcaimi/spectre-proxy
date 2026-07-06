@@ -5,17 +5,17 @@
 }
 
 .navbar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg,rgba(0, 0, 0, 1) 0%, rgba(135, 135, 135, 1) 49%, rgba(179, 179, 179, 1) 100%);
   color: white;
   padding: 20px 40px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-brand {
-  margin-bottom: 15px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 15px;
 }
 
 .navbar-brand-text {
