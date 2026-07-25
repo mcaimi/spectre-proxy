@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
+	"github.com/mcaimi/spectre-proxy/internal/storage"
 )
 
 type RequestCapture struct {

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"codeberg.org/mcaimi/spectre-proxy/internal/cert"
-	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
+	"github.com/mcaimi/spectre-proxy/internal/cert"
+	"github.com/mcaimi/spectre-proxy/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 

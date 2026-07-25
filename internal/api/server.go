@@ -9,11 +9,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"codeberg.org/mcaimi/spectre-proxy/internal/api/handlers"
-	"codeberg.org/mcaimi/spectre-proxy/internal/cert"
-	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
-	"codeberg.org/mcaimi/spectre-proxy/internal/vhost"
-	"codeberg.org/mcaimi/spectre-proxy/internal/web"
+	"github.com/mcaimi/spectre-proxy/internal/api/handlers"
+	"github.com/mcaimi/spectre-proxy/internal/cert"
+	"github.com/mcaimi/spectre-proxy/internal/storage"
+	"github.com/mcaimi/spectre-proxy/internal/vhost"
+	"github.com/mcaimi/spectre-proxy/internal/web"
 	"github.com/sirupsen/logrus"
 )
 

@@ -1,4 +1,4 @@
-module codeberg.org/mcaimi/spectre-proxy
+module github.com/mcaimi/spectre-proxy
 
 go 1.26.4
 

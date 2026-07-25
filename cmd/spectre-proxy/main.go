@@ -8,12 +8,12 @@ import (
 	"syscall"
 	"time"
 
-	"codeberg.org/mcaimi/spectre-proxy/internal/api"
-	"codeberg.org/mcaimi/spectre-proxy/internal/cert"
-	"codeberg.org/mcaimi/spectre-proxy/internal/config"
-	"codeberg.org/mcaimi/spectre-proxy/internal/proxy"
-	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
-	"codeberg.org/mcaimi/spectre-proxy/internal/vhost"
+	"github.com/mcaimi/spectre-proxy/internal/api"
+	"github.com/mcaimi/spectre-proxy/internal/cert"
+	"github.com/mcaimi/spectre-proxy/internal/config"
+	"github.com/mcaimi/spectre-proxy/internal/proxy"
+	"github.com/mcaimi/spectre-proxy/internal/storage"
+	"github.com/mcaimi/spectre-proxy/internal/vhost"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

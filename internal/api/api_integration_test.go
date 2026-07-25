@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"codeberg.org/mcaimi/spectre-proxy/internal/api/handlers"
-	"codeberg.org/mcaimi/spectre-proxy/internal/cert"
-	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
-	"codeberg.org/mcaimi/spectre-proxy/internal/vhost"
+	"github.com/mcaimi/spectre-proxy/internal/api/handlers"
+	"github.com/mcaimi/spectre-proxy/internal/cert"
+	"github.com/mcaimi/spectre-proxy/internal/storage"
+	"github.com/mcaimi/spectre-proxy/internal/vhost"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,7 +25,6 @@ func setupTestServer(t *testing.T) (*chi.Mux, *storage.Database, func()) {
 	if err != nil {
 		t.Fatalf("failed to create test database: %v", err)
 	}
-
 
 	// Create repositories
 	vhostRepo := storage.NewVHostRepository(db)

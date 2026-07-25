@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"codeberg.org/mcaimi/spectre-proxy/internal/storage"
-	"codeberg.org/mcaimi/spectre-proxy/internal/vhost"
+	"github.com/mcaimi/spectre-proxy/internal/storage"
+	"github.com/mcaimi/spectre-proxy/internal/vhost"
 	"github.com/sirupsen/logrus"
 )
 
