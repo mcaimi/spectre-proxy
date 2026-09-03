@@ -81,6 +81,33 @@ func (r *RequestRepository) List(limit, offset int) ([]*RequestLog, error) {
 	return logs, nil
 }
 
+func (r *RequestRepository) ListByVHostID(vhostID int64) ([]*RequestLog, error) {
+	rows, err := r.db.Query(
+		`SELECT id, vhost_id, method, url, request_headers, request_body, response_status, response_headers, response_body, timestamp, duration_ms, client_ip
+		FROM request_logs WHERE vhost_id = ? ORDER BY timestamp ASC`,
+		vhostID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list request logs by vhost: %w", err)
+	}
+	defer rows.Close()
+
+	var logs []*RequestLog
+	for rows.Next() {
+		req := &RequestLog{}
+		if err := rows.Scan(
+			&req.ID, &req.VHostID, &req.Method, &req.URL, &req.RequestHeaders, &req.RequestBody,
+			&req.ResponseStatus, &req.ResponseHeaders, &req.ResponseBody,
+			&req.Timestamp, &req.DurationMs, &req.ClientIP,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan request log: %w", err)
+		}
+		logs = append(logs, req)
+	}
+
+	return logs, nil
+}
+
 func (r *RequestRepository) DeleteOlderThan(duration time.Duration) error {
 	cutoff := time.Now().Add(-duration)
 	_, err := r.db.Exec("DELETE FROM request_logs WHERE timestamp < ?", cutoff)
