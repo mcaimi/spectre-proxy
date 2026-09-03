@@ -72,6 +72,26 @@ function VHostList() {
     }
   }
 
+  const handleExportHAR = async (vhost) => {
+    try {
+      const response = await vhostAPI.exportHAR(vhost.id)
+      const disposition = response.headers['content-disposition']
+      let filename = `${vhost.hostname}.har`
+      if (disposition) {
+        const match = disposition.match(/filename="?(.+?)"?$/)
+        if (match) filename = match[1]
+      }
+      const url = URL.createObjectURL(response.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.error || err.message}`)
+    }
+  }
+
   const handleToggleEnabled = async (vhost) => {
     try {
       await vhostAPI.update(vhost.id, {
@@ -141,6 +161,13 @@ function VHostList() {
                       style={{ marginRight: '10px' }}
                     >
                       Edit
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => handleExportHAR(vhost)}
+                      style={{ marginRight: '10px' }}
+                    >
+                      Export HAR
                     </button>
                     <button
                       className="btn-danger"
