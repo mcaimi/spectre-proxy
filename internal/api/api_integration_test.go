@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/mcaimi/spectre-proxy/internal/api/handlers"
 	"github.com/mcaimi/spectre-proxy/internal/cert"
+	"github.com/mcaimi/spectre-proxy/internal/har"
 	"github.com/mcaimi/spectre-proxy/internal/storage"
 	"github.com/mcaimi/spectre-proxy/internal/vhost"
 	"github.com/sirupsen/logrus"
@@ -50,6 +51,7 @@ func setupTestServer(t *testing.T) (*chi.Mux, *storage.Database, func()) {
 	vhostHandler := handlers.NewVHostHandler(vhostRepo, router, logger)
 	certHandler := handlers.NewCertHandler(certRepo, certManager, 2048, 2048, 24*time.Hour, logger)
 	requestHandler := handlers.NewRequestHandler(requestRepo, logger)
+	harHandler := handlers.NewHARHandler(requestRepo, vhostRepo, logger)
 
 	// Setup routes
 	r := chi.NewRouter()
@@ -65,6 +67,7 @@ func setupTestServer(t *testing.T) (*chi.Mux, *storage.Database, func()) {
 			r.Get("/{id}", vhostHandler.Get)
 			r.Put("/{id}", vhostHandler.Update)
 			r.Delete("/{id}", vhostHandler.Delete)
+			r.Get("/{id}/har", harHandler.ExportHAR)
 		})
 
 		r.Route("/certificates", func(r chi.Router) {
@@ -590,5 +593,148 @@ func TestAPI_InvalidEndpoints(t *testing.T) {
 				t.Errorf("expected status %d, got %d", tt.expectedStatus, rr.Code)
 			}
 		})
+	}
+}
+
+func TestAPI_ExportHAR(t *testing.T) {
+	r, db, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	vhostRepo := storage.NewVHostRepository(db)
+	requestRepo := storage.NewRequestRepository(db)
+
+	vh, err := vhostRepo.Create("api.example.com", "https://backend.example.com")
+	if err != nil {
+		t.Fatalf("failed to create vhost: %v", err)
+	}
+
+	now := time.Now()
+	requestRepo.Save(&storage.RequestLog{
+		VHostID:         &vh.ID,
+		Method:          "GET",
+		URL:             "https://api.example.com/users?page=1",
+		RequestHeaders:  `{"Accept":["application/json"]}`,
+		ResponseStatus:  200,
+		ResponseHeaders: `{"Content-Type":["application/json"]}`,
+		ResponseBody:    []byte(`[{"id":1}]`),
+		Timestamp:       now,
+		DurationMs:      50,
+		ClientIP:        "10.0.0.1",
+	})
+	requestRepo.Save(&storage.RequestLog{
+		VHostID:         &vh.ID,
+		Method:          "POST",
+		URL:             "https://api.example.com/users",
+		RequestHeaders:  `{"Content-Type":["application/json"]}`,
+		RequestBody:     []byte(`{"name":"Alice"}`),
+		ResponseStatus:  201,
+		ResponseHeaders: `{"Content-Type":["application/json"]}`,
+		ResponseBody:    []byte(`{"id":2,"name":"Alice"}`),
+		Timestamp:       now.Add(time.Second),
+		DurationMs:      120,
+		ClientIP:        "10.0.0.1",
+	})
+
+	req, _ := makeRequest(http.MethodGet, fmt.Sprintf("/api/v1/vhosts/%d/har", vh.ID), nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+	}
+
+	if ct := rr.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("expected Content-Type application/json, got %s", ct)
+	}
+
+	disposition := rr.Header().Get("Content-Disposition")
+	if disposition == "" {
+		t.Error("expected Content-Disposition header")
+	}
+
+	var harFile har.HAR
+	if err := json.Unmarshal(rr.Body.Bytes(), &harFile); err != nil {
+		t.Fatalf("failed to parse HAR response: %v", err)
+	}
+
+	if harFile.Log.Version != "1.2" {
+		t.Errorf("expected HAR version 1.2, got %s", harFile.Log.Version)
+	}
+	if harFile.Log.Creator.Name != "spectre-proxy" {
+		t.Errorf("expected creator spectre-proxy, got %s", harFile.Log.Creator.Name)
+	}
+	if len(harFile.Log.Entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(harFile.Log.Entries))
+	}
+
+	if harFile.Log.Entries[0].Request.Method != "GET" {
+		t.Errorf("expected first entry method GET, got %s", harFile.Log.Entries[0].Request.Method)
+	}
+	if harFile.Log.Entries[1].Request.Method != "POST" {
+		t.Errorf("expected second entry method POST, got %s", harFile.Log.Entries[1].Request.Method)
+	}
+	if harFile.Log.Entries[1].Request.PostData == nil {
+		t.Error("expected POST entry to have PostData")
+	}
+	if harFile.Log.Entries[0].Response.Status != 200 {
+		t.Errorf("expected first entry status 200, got %d", harFile.Log.Entries[0].Response.Status)
+	}
+
+	if len(harFile.Log.Entries[0].Request.QueryString) == 0 {
+		t.Error("expected query string parameters for GET request")
+	}
+}
+
+func TestAPI_ExportHAR_NonExistentVHost(t *testing.T) {
+	r, _, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	req, _ := makeRequest(http.MethodGet, "/api/v1/vhosts/999/har", nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("expected status %d, got %d", http.StatusNotFound, rr.Code)
+	}
+}
+
+func TestAPI_ExportHAR_InvalidID(t *testing.T) {
+	r, _, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	req, _ := makeRequest(http.MethodGet, "/api/v1/vhosts/invalid/har", nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
+	}
+}
+
+func TestAPI_ExportHAR_NoLogs(t *testing.T) {
+	r, db, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	vhostRepo := storage.NewVHostRepository(db)
+	vh, err := vhostRepo.Create("empty.example.com", "https://backend.example.com")
+	if err != nil {
+		t.Fatalf("failed to create vhost: %v", err)
+	}
+
+	req, _ := makeRequest(http.MethodGet, fmt.Sprintf("/api/v1/vhosts/%d/har", vh.ID), nil)
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d: %s", http.StatusOK, rr.Code, rr.Body.String())
+	}
+
+	var harFile har.HAR
+	if err := json.Unmarshal(rr.Body.Bytes(), &harFile); err != nil {
+		t.Fatalf("failed to parse HAR response: %v", err)
+	}
+
+	if len(harFile.Log.Entries) != 0 {
+		t.Errorf("expected 0 entries, got %d", len(harFile.Log.Entries))
 	}
 }
