@@ -17,6 +17,7 @@ export const vhostAPI = {
   create: (data) => api.post('/vhosts', data),
   update: (id, data) => api.put(`/vhosts/${id}`, data),
   delete: (id) => api.delete(`/vhosts/${id}`),
+  exportHAR: (id) => api.get(`/vhosts/${id}/har`, { responseType: 'blob' }),
 }
 
 export const certAPI = {

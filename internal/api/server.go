@@ -72,6 +72,7 @@ func (s *Server) Start(cfg *Config) error {
 	vhostHandler := handlers.NewVHostHandler(vhostRepo, s.router, s.log)
 	certHandler := handlers.NewCertHandler(certRepo, s.certManager, s.caKeySize, s.certKeySize, s.certValidity, s.log)
 	requestHandler := handlers.NewRequestHandler(requestRepo, s.log)
+	harHandler := handlers.NewHARHandler(requestRepo, vhostRepo, s.log)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +86,7 @@ func (s *Server) Start(cfg *Config) error {
 			r.Get("/{id}", vhostHandler.Get)
 			r.Put("/{id}", vhostHandler.Update)
 			r.Delete("/{id}", vhostHandler.Delete)
+			r.Get("/{id}/har", harHandler.ExportHAR)
 		})
 
 		r.Route("/certificates", func(r chi.Router) {

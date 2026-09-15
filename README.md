@@ -11,6 +11,7 @@ A transparent HTTP/HTTPS interception proxy for reverse engineers and security p
 - **Custom CA Certificate**: Replace the default CA with your own custom certificate fields
 - **Virtual Host Management**: Route multiple domains through the proxy with independent configurations
 - **Request/Response Logging**: Captures and stores all intercepted traffic in SQLite database
+- **HAR Export**: Export captured traffic per virtual host as HAR 1.2 files for analysis in Chrome DevTools, Firefox, or any HAR viewer
 - **Modern Web UI**: React-based management interface for visual control
 - **REST API**: Complete API for programmatic management
 - **Zero Configuration**: SQLite-based storage requires no external dependencies
@@ -166,6 +167,9 @@ curl https://api.example.com/endpoint
 # View captured requests via API
 curl http://localhost:9000/api/v1/logs
 
+# Export captured traffic for a vhost as HAR
+curl -o api.example.com.har http://localhost:9000/api/v1/vhosts/1/har
+
 # Or use the Web UI
 open http://localhost:9000/
 ```
@@ -210,6 +214,7 @@ http://localhost:9000/
 - Auto-refresh toggle (updates every 3 seconds)
 - View full request/response details
 - JSON pretty-printing
+- Export per-vhost traffic as HAR 1.2 files
 - Filter and search (coming soon)
 
 ### Building the UI
@@ -253,6 +258,7 @@ All API endpoints are prefixed with `/api/v1`.
 | `GET` | `/vhosts/{id}` | Get virtual host details |
 | `PUT` | `/vhosts/{id}` | Update virtual host |
 | `DELETE` | `/vhosts/{id}` | Delete virtual host |
+| `GET` | `/vhosts/{id}/har` | Export captured traffic as HAR 1.2 file |
 
 ### Certificates
 
@@ -352,6 +358,7 @@ Client -> [DNS Resolution] -> SPECTRE Proxy
 │         │                             │ - Save            │        │
 │         ├─────────────────────────────┤ - GetByID         │        │
 │         │                             │ - List            │        │
+│         │                             │ - ListByVHostID   │        │
 │         │                             │ - DeleteOlderThan │        │
 │         │                             │ - Count           │        │
 │         │                             └─────────────────────┘        │
@@ -421,8 +428,9 @@ spectre/
 ├── cmd/spectre/          # Main entry point (wires all components)
 ├── internal/
 │   ├── api/              # REST API server (chi router)
-│   │   └── handlers/     # HTTP handlers for vhosts, certificates, logs
+│   │   └── handlers/     # HTTP handlers for vhosts, certificates, logs, HAR export
 │   ├── cert/             # Certificate management (CA generation, on-demand certs, cache)
+│   ├── har/              # HAR 1.2 export (structs + converter)
 │   ├── config/           # Configuration loading (viper + YAML)
 │   ├── proxy/            # Core proxy (HTTP/HTTPS handlers, request capture)
 │   ├── storage/          # SQLite data layer (models + repositories)

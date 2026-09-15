@@ -628,6 +628,162 @@
     }
   });</code></pre>
             </div>
+
+            <h3>HAR Export</h3>
+
+            <div class="endpoint-block">
+                <div class="endpoint-header">
+                    <span class="method method-get">GET</span>
+                    <code>/api/v1/vhosts/{id}/har</code>
+                </div>
+                <p><strong>Description:</strong> Export all captured request/response logs for a virtual host as an <a href="http://www.softwareishard.com/blog/har-12-spec/" style="color: #ffd700;">HAR 1.2</a> (HTTP Archive) file. The resulting file can be imported into Chrome DevTools, Firefox Developer Tools, Charles Proxy, or any HAR-compatible analysis tool.</p>
+
+                <h4>Path Parameters</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">id</td>
+                        <td class="param-type">integer</td>
+                        <td class="param-required">Required</td>
+                        <td>Virtual host ID</td>
+                    </tr>
+                </table>
+
+                <h4>Request</h4>
+                <pre><code>curl -o api.example.com.har http://localhost:9000/api/v1/vhosts/1/har</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Success:</strong> <span class="response-code code-200">200 OK</span></p>
+                <p>Returns a JSON file with <code>Content-Disposition: attachment</code> header. The filename is derived from the virtual host hostname (e.g., <code>api.example.com.har</code>).</p>
+                <pre><code>{
+  "log": {
+    "version": "1.2",
+    "creator": {
+      "name": "spectre-proxy",
+      "version": "1.0.0"
+    },
+    "entries": [
+      {
+        "startedDateTime": "2025-01-15T10:30:00Z",
+        "time": 125,
+        "request": {
+          "method": "GET",
+          "url": "https://api.example.com/users",
+          "httpVersion": "HTTP/1.1",
+          "cookies": [],
+          "headers": [
+            {"name": "Accept", "value": "application/json"},
+            {"name": "Host", "value": "api.example.com"}
+          ],
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": 0
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "httpVersion": "HTTP/1.1",
+          "cookies": [],
+          "headers": [
+            {"name": "Content-Type", "value": "application/json"}
+          ],
+          "content": {
+            "size": 42,
+            "mimeType": "application/json",
+            "text": "{\"users\": []}"
+          },
+          "redirectURL": "",
+          "headersSize": -1,
+          "bodySize": 42
+        },
+        "cache": {},
+        "timings": {
+          "send": 0,
+          "wait": 125,
+          "receive": 0
+        }
+      }
+    ]
+  }
+}</code></pre>
+
+                <p><strong>Error:</strong> <span class="response-code code-404">404 Not Found</span></p>
+                <pre><code>{"error": "Virtual host not found"}</code></pre>
+
+                <h4>Response Headers</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Header</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">Content-Type</td>
+                        <td><code>application/json</code></td>
+                        <td>HAR files are JSON documents</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">Content-Disposition</td>
+                        <td><code>attachment; filename="&lt;hostname&gt;.har"</code></td>
+                        <td>Triggers file download in browsers</td>
+                    </tr>
+                </table>
+
+                <h4>HAR Entry Fields</h4>
+                <table class="param-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Source</th>
+                        <th>Notes</th>
+                    </tr>
+                    <tr>
+                        <td class="param-name">startedDateTime</td>
+                        <td>Request timestamp</td>
+                        <td>ISO 8601 format</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">time</td>
+                        <td>duration_ms</td>
+                        <td>Total elapsed time in milliseconds</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">request.headers</td>
+                        <td>request_headers</td>
+                        <td>Converted from stored JSON map to HAR name/value pairs</td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">response.content</td>
+                        <td>response_body</td>
+                        <td>Binary content is base64-encoded with <code>encoding: "base64"</code></td>
+                    </tr>
+                    <tr>
+                        <td class="param-name">timings</td>
+                        <td>duration_ms</td>
+                        <td>Full duration assigned to <code>wait</code>; detailed breakdown not available</td>
+                    </tr>
+                </table>
+
+                <h4>Example (JavaScript)</h4>
+                <pre><code>fetch('/api/v1/vhosts/1/har')
+  .then(res => {
+    const disposition = res.headers.get('Content-Disposition');
+    const filename = disposition.match(/filename="(.+)"/)[1];
+    return res.blob().then(blob => ({ blob, filename }));
+  })
+  .then(({ blob, filename }) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  });</code></pre>
+            </div>
         </div>
 
         <div class="card" id="certificates">
@@ -1262,6 +1418,10 @@ sudo update-ca-certificates</code></pre>
 
             <h3>Step 6: View Captured Traffic</h3>
             <pre><code>curl http://localhost:9000/api/v1/logs | jq</code></pre>
+
+            <h3>Step 7: Export Traffic as HAR</h3>
+            <p>Download the captured traffic for a virtual host as a HAR file, then open it in Chrome DevTools (Network tab &rarr; Import HAR) or any HAR viewer:</p>
+            <pre><code>curl -o api.example.com.har http://localhost:9000/api/v1/vhosts/1/har</code></pre>
         </div>
 
         <div class="card">
@@ -1313,6 +1473,8 @@ sudo update-ca-certificates</code></pre>
         console.log('  fetch("/api/v1/vhosts").then(r => r.json()).then(console.log)');
         console.log('  fetch("/api/v1/certificates").then(r => r.json()).then(console.log)');
         console.log('  fetch("/api/v1/logs?limit=10").then(r => r.json()).then(console.log)');
+        console.log('\n%cExport vhost traffic as HAR:', 'font-size: 12px; font-weight: bold; color: #ffd700;');
+        console.log('  fetch("/api/v1/vhosts/1/har").then(r => r.blob()).then(b => { const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "traffic.har"; a.click(); })');
         console.log('\n%cReplace CA with custom certificate:', 'font-size: 12px; font-weight: bold; color: #ffd700;');
         console.log('  fetch("/api/v1/certificates/ca/replace", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({common_name: "My Custom CA", organization: "My Org"})}).then(r => r.json()).then(console.log)');
         console.log('\n%cLoad pre-generated CA certificate:', 'font-size: 12px; font-weight: bold; color: #ffd700;');
